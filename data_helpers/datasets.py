@@ -86,9 +86,9 @@ class ICDARDataset(Dataset):
 
         # Get pixel location/geography map
         # shape of geo_map: (img_size/4 * img_size/4 * 5)
-        score_map, geo_map, bboxes = generate_rbbox(image, bboxes, transcripts)
+        score_map, geo_map, training_mask, bboxes = generate_rbbox(image, bboxes, transcripts)
 
-        return image_path, image, bboxes.reshape(-1, 8), transcripts, score_map, geo_map
+        return image_path, image, bboxes.reshape(-1, 8), transcripts, score_map, geo_map, training_mask
     
     def _load_from_file(self, image_path, gt_path):
         """

@@ -1,5 +1,5 @@
 {
-    "data_base_dir": "/content/gt",
+    "data_base_dir": "/app/FOTS-torch/data_folder/output_dir",
     "val_fraction": 0.05,
     "dataset_config": {
         "batch_size": 16,
@@ -15,7 +15,7 @@
     "optimizer_config": {
         "lr": 0.01
     },
-    "model_save_path": "/content/drive/MyDrive/cs2",
+    "model_save_path": "/app/FOTS-torch/models",
     "fots_hyperparameters": {
         "lam_theta": 20,
         "lam_reg": 1,

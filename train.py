@@ -111,7 +111,7 @@ if __name__ == '__main__':
     # Parse command line args to get the config file
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '-c', '--config', default="../config/train_config.json",
+        '-c', '--config', default="./config/train_config.json",
         type=str, help='Training config file path.'
     )
     parser.add_argument(

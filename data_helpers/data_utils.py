@@ -97,10 +97,10 @@ def icdar_collate(batch):
 
     texts, bboxs, mapping = [], [], []
     for idx, (text, bbox) in enumerate(zip(transcripts, boxes)):
-        for txt, box in zip(text, bbox):
+        # for txt, box in zip(text, bbox):
             mapping.append(idx)
-            texts.append(txt)
-            bboxs.append(box)
+            texts.append(text)
+            bboxs.append(bbox)
 
     mapping = np.array(mapping)
     texts = np.array(texts)

@@ -1,6 +1,7 @@
 {
-    "data_dir": "../input/small-synth800k/content/SynthText",
-    "output_dir": "gt",
+    "image_dir": "/app/FOTS-torch/data_folder/image/",
+    "gt_dir": "/app/FOTS-torch/data_folder/gt/",
+    "output_dir": "/app/FOTS-torch/data_folder/output_dir",
     "batch_size": 256,
     "num_iterations": -1,
     "num_workers": 4

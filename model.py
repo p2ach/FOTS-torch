@@ -90,6 +90,7 @@ class FOTSModel(nn.Module):
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
         # Step 1: Extract shared features
+        # print("images shape",images.shape)
         shared_features = self.shared_conv(images)
 
         # Step 2: Text detection from shared features using detector branch
@@ -113,6 +114,7 @@ class FOTSModel(nn.Module):
 
             pred_bboxes = []
             pred_mapping = []
+            print("score.shape[0]",score.shape[0])
             for idx in range(score.shape[0]):
                 bbox = Toolbox.detect(
                     score_map=score[idx, :, :, 0],
@@ -124,9 +126,12 @@ class FOTSModel(nn.Module):
                     pred_bboxes.append(bbox)
 
             if len(pred_mapping) > 0:
-                pred_bboxes = np.concatenate(pred_bboxes)
-                pred_mapping = np.concatenate(pred_mapping)
-                rois, lengths, indices = self.roirotate(shared_features, pred_bboxes[:, :8], pred_mapping)
+                try:
+                    pred_bboxes = np.concatenate(pred_bboxes)
+                    pred_mapping = np.concatenate(pred_mapping)
+                    rois, lengths, indices = self.roirotate(shared_features, pred_bboxes[:, :8], pred_mapping)
+                except:
+                    return per_pixel_preds, loc_features, (None, None), pred_bboxes, pred_mapping, None
             else:
                 return per_pixel_preds, loc_features, (None, None), pred_bboxes, pred_mapping, None
 

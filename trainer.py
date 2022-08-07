@@ -51,6 +51,8 @@ class Train:
             image_paths, images, bboxes, training_mask, transcripts, score_map, geo_map, mapping = batch
 
             images = images.to(self.device)
+            images = torch.permute(images, (0,3,1,2))
+
             score_map = score_map.to(self.device)
             geo_map = geo_map.to(self.device)
             training_mask = training_mask.to(self.device)
@@ -114,6 +116,7 @@ class Train:
                 image_paths, images, bboxes, training_mask, transcripts, score_map, geo_map, mapping = batch
 
                 images = images.to(self.device)
+                images = torch.permute(images, (0,3,1,2))
                 score_map = score_map.to(self.device)
                 geo_map = geo_map.to(self.device)
                 training_mask = training_mask.to(self.device)

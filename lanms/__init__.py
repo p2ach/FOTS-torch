@@ -13,6 +13,11 @@ def merge_quadrangle_n9(polys, thres=0.3, precision=10000):
     if len(polys) == 0:
         return np.array([], dtype='float32')
     p = polys.copy()
+
+    print("p",len(p))
+
+    p = p[:1000]
+
     p[:,:8] *= precision
     ret = np.array(nms_impl(p, thres), dtype='float32')
     ret[:,:8] /= precision

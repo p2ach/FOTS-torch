@@ -5,8 +5,8 @@ import pandas as pd
 
 from torch.utils.data import DataLoader
 
-from .datasets import Synth800kDataset
-from .data_utils import synth800k_collate
+from .datasets import Synth800kDataset, ICDARDataset
+from .data_utils import synth800k_collate, icdar_collate
 
 from tqdm import tqdm
 
@@ -16,14 +16,15 @@ def preprocess(config):
     Preprocess the data to save GPU time while training because 
     ground truth generation is very time consuming for FOTS.
     """
-    dataset = Synth800kDataset(config["data_dir"])
+    # dataset = Synth800kDataset(config["data_dir"])
+    dataset = ICDARDataset(config["image_dir"],config["gt_dir"])
     data_loader = DataLoader(
         dataset,
         num_workers=config["num_workers"],
         pin_memory=True,
         batch_size=config["batch_size"],
         shuffle=False,
-        collate_fn=synth800k_collate
+        collate_fn=icdar_collate
     )
 
     os.makedirs(os.path.join(config["output_dir"], "image"), exist_ok=True)
@@ -35,7 +36,7 @@ def preprocess(config):
 
     img_list, sm_list, gm_list, tm_list, bboxes, transcripts, mappings = [], [], [], [], [], [], []
     for idx, batch in tqdm(enumerate(data_loader), total=len(data_loader), position=0, leave=True):
-        image_paths, images, bboxs, texts, score_maps, geo_maps, training_masks = batch
+        image_paths, images, bboxs, training_masks, texts, score_maps, geo_maps, mapping = batch
         for pth, img, bbox, txt, scr, geo, tm in zip(image_paths, images, bboxs, texts, score_maps, geo_maps, training_masks):
             img_pth = pth.split("/")[-2:]
             img_name = img_pth[-1].split(".")[0]
