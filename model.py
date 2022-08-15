@@ -44,7 +44,7 @@ class FOTSModel(nn.Module):
         self.recognizer.to(device)
         self.shared_conv.to(device)
     
-    def train(self):
+    def run_train(self):
         """Transition the FOTS model to training mode."""
         self.recognizer.train()
         self.detector.train()
@@ -83,12 +83,14 @@ class FOTSModel(nn.Module):
     
     def forward(self, *x):
         """FOTS forward method."""
-
-        images, bboxes, mappings = x
+        if self.is_training:
+            images, bboxes, mappings = x
+        else:
+            images = x[0]
 
         # Get the device
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
+        images=images.to(device)
         # Step 1: Extract shared features
         # print("images shape",images.shape)
         shared_features = self.shared_conv(images)

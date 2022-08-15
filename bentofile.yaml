@@ -1,0 +1,44 @@
+service: "service:svc"  # Same as the argument passed to `bentoml serve`
+labels:
+   owner: l7
+   stage: prod
+include:
+- "*.py"  # A pattern for matching which files to include in the bento
+- "./components"
+- "./config"
+- "./data_folder"
+- "./data_helpers"
+- "./eval_tools"
+- "./lanms"
+- "./models/FOTS_last_checkpoint.pt"
+docker:
+    distro: debian
+    python_version: "3.8.12"
+    system_packages:
+        - libglib2.0-0
+python:
+   packages:  # Additional pip packages required by the service
+   - scikit-learn
+   - pandas
+   - pretrainedmodels==0.7.4
+#   - torch==1.9.1+cu111
+#   - torchvision==0.10.1+cu111
+#   - torchaudio==0.9.1
+   - scipy==1.4.1
+   - numpy==1.19.5
+   - pandas==1.1.5
+   - tqdm==4.55.1
+   - lanms==1.0.2
+   - Polygon3==3.0.8
+   - opencv-python-headless==4.3.0.36
+   wheels:
+     - ./local_wheels/torch-1.9.1+cu111-cp38-cp38-linux_x86_64.whl
+     - ./local_wheels/torchaudio-0.9.1-cp38-cp38-manylinux1_x86_64.whl
+     - ./local_wheels/torchvision-0.10.1+cu111-cp38-cp38-linux_x86_64.whl
+   extra_index_url:
+     - "https://download.pytorch.org/whl/torch_stable.html"
+     - "https://pypi.python.org/simple"
+   trusted_host:
+     - "pypi.python.org"
+     - "my.mirror.com"
+   pip_args: "--pre -U --force-reinstall"

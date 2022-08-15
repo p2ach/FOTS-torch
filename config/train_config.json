@@ -16,6 +16,8 @@
         "lr": 0.01
     },
     "model_save_path": "/app/FOTS-torch/models",
+    "shared_conv_model_save_path": "/app/FOTS-torch/models/shared_conv",
+    "detector_model_save_path": "/app/FOTS-torch/models/detector",
     "fots_hyperparameters": {
         "lam_theta": 20,
         "lam_reg": 1,

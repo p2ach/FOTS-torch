@@ -47,15 +47,15 @@ def inference(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "-m", "--model", type=str, required=True,
+        "-m", "--model", default="./models/FOTS_last_checkpoint.pt", type=str,
         help='Path to trained model'
     )
     parser.add_argument(
-        "-o", "--output_dir", type=str, default="predictions",
+        "-o", "--output_dir", type=str, default="/app/FOTS-torch/data_folder/output_eval",
         help="Output directory to save predictions"
     )
     parser.add_argument(
-        "-i", "--input_dir", type=str, required=True,
+        "-i", "--input_dir", type=str, default="/app/FOTS-torch/data_folder/image",
         help="Input directory having images to be predicted"
     )
     args = parser.parse_args()

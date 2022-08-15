@@ -8,6 +8,7 @@ import numpy as np
 from tqdm import tqdm
 
 from utils import TranscriptEncoder, classes
+import bentoml
 
 class Train:
     """
@@ -44,7 +45,7 @@ class Train:
 
     def train_epoch(self, epoch):
         """Train a single epoch."""
-        self.model.train()
+        self.model.run_train()
         epoch_det_loss, epoch_rec_loss, total_metrics = 0, 0, np.zeros(3)
 
         for i, batch in tqdm(enumerate(self.train_iterator), total=len(self.train_iterator), position=0, leave=True):
@@ -129,7 +130,11 @@ class Train:
                 if len(pred_mapping) > 0:
                     pred_mapping = pred_mapping[indices]
                     pred_bboxes = pred_bboxes[indices]
-                    pred_fns = [image_paths[i] for i in pred_mapping]
+                    try:
+                        pred_fns = [image_paths[i[0]] for i in pred_mapping]
+                    except Exception as e:
+                        print("i",i)
+                        raise (e)
 
                     try:
                         labels, label_lengths = self.transcript_encoder.encode(transcripts[indices].tolist())
@@ -192,6 +197,42 @@ class Train:
             os.path.join(self.config["model_save_path"], name)
         )
 
+        detector_state_dict = {
+            "epoch": epoch,
+            "model": self.model.detector.state_dict(),
+            "optimizer": self.optimizer.state_dict(),
+            "lr_scheduler": self.lr_scheduler.state_dict(),
+            "config": self.config
+        }
+
+        # Save checkpoint
+        torch.save(
+            detector_state_dict,
+            os.path.join(self.config["detector_model_save_path"], name)
+        )
+
+        shrd_state_dict = {
+            "epoch": epoch,
+            "model": self.model.shared_conv.state_dict(),
+            "optimizer": self.optimizer.state_dict(),
+            "lr_scheduler": self.lr_scheduler.state_dict(),
+            "config": self.config
+        }
+
+        # Save checkpoint
+        torch.save(
+            shrd_state_dict,
+            os.path.join(self.config["shared_conv_model_save_path"], name)
+        )
+        md = self.model.shared_conv
+        bentoml.pytorch.save_model(
+            model = md,
+            name = "my_torch_model",
+            signatures={"__call__": {"batchable": True, "batchdim": 0}},
+        )
+
+
+
     def _load_checkpoint(self, path):
         """Load checkpoint from given path."""
         print(f"Loading checkpoint from: {path}")
@@ -218,7 +259,7 @@ class Train:
             # Train
             train_det_loss, train_rec_loss, train_precision, train_recall, train_f1 = self.train_epoch(epoch)
             # Evaluate
-            val_det_loss, val_rec_loss, val_precision, val_recall, val_f1 = self.eval_epoch()
+            # val_det_loss, val_rec_loss, val_precision, val_recall, val_f1 = self.eval_epoch()
 
             # self.lr_scheduler.step(val_loss)
             self.lr_scheduler.step()

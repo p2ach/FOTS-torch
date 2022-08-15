@@ -79,8 +79,11 @@ class SharedConvolutions(nn.Module):
         """
         Image Standardization. Subtracts the mean from the given image.
         """
-        num_channels = images.data.shape[1]
-
+        try:
+            num_channels = images.data.shape[1]
+        except Exception as e:
+            print("images",type(images))
+            raise(e)
         # print("num_channels",num_channels)
 
         if len(means) != num_channels:
