@@ -116,7 +116,7 @@ class FOTSModel(nn.Module):
 
             pred_bboxes = []
             pred_mapping = []
-            print("score.shape[0]",score.shape[0])
+            # print("score.shape[0]",score.shape[0])
             for idx in range(score.shape[0]):
                 bbox = Toolbox.detect(
                     score_map=score[idx, :, :, 0],

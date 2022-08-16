@@ -2,9 +2,20 @@ import bentoml
 import argparse
 import torch
 from model import FOTSModel
+import numpy as np
 # import FOTSModel
 from bentoml.io import JSON
 from bentoml._internal.types import JSONSerializable
+import cv2
+import os
+from data_helpers.data_utils import resize_image
+from utils import TranscriptEncoder, classes
+from bbox import Toolbox
+from eval_functions import get_transcript
+
+
+transcript_encoder = TranscriptEncoder(classes)
+
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 def _load_model(model_path):
@@ -19,42 +30,27 @@ def inference(args):
     model = _load_model(args.model)
     # model.eval()
     # model.training=False
-    saved_model = bentoml.pytorch.save_model(
+    saved_model = bentoml.pytorch.save(
             model = model,
             name = "fots_model",
         signatures={"__call__": {"batchable": False, "batchdim": 0}},
     )
     print(f"Model saved: {saved_model}")
-    # runner = bentoml.pytorch.get("fots_model").to_runner()
-    #
-    # svc = bentoml.Service(name="fots_model", runners=[runner])
-    #
-    # @svc.api(input=JSON(), output=JSON())
-    # async def predict(json_obj: JSONSerializable) -> JSONSerializable:
-    #     batch_ret = await runner.async_run([json_obj])
-    #     return batch_ret[0]
-    # @svc.api(input=JSON(), output=JSON())
-    # async def predict(json_obj: JSONSerializable) -> JSONSerializable:
-    #     batch_ret = await runner.async_run([json_obj])
-    #     return batch_ret[0]
+    return saved_model
 
 
+def test_runner(saved_model,input_img = "img_513.jpg",with_img=True,output_dir="./data_folder/output_eval"):
+    input_orig=cv2.imread(input_img)
+    runner = bentoml.pytorch.get(saved_model.tag).to_runner()
 
-    # x = torch.randn(1, 3, 224, 224, requires_grad=True)
-    #
-    # # Export the model
-    # torch.onnx.export(
-    #     model,
-    #     x,
-    #     "super_resolution.onnx",  # where to save the model (can be a file or file-like object)
-    #     #export_params=True,  # store the trained parameter weights inside the model file
-    #     opset_version=11,  # the ONNX version to export the model to
-    #     do_constant_folding=True,  # whether to execute constant folding for optimization
-    #     input_names=["input"],  # the model's input names
-    #     output_names=["output"] #the model's output names
-    # )
-
-
+    input_np = cv2.cvtColor(input_orig, cv2.COLOR_BGR2RGB).astype(np.float32)
+    input_np, _, _ = resize_image(input_np, 512)
+    img_arr = np.array(input_np) / 255.0
+    input_arr = np.expand_dims(img_arr, 0).astype("float32")
+    input_arr = np.transpose(input_arr, (0, 3, 1, 2))
+    runner.init_local()
+    score, geometry, preds, boxes, mapping, indices = runner.run(input_arr)
+    return get_transcript(input_img, input_orig, img_arr, preds, boxes, mapping, indices, with_img, output_dir)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -63,12 +59,22 @@ if __name__ == "__main__":
         help='Path to trained model'
     )
     parser.add_argument(
-        "-o", "--output_dir", type=str, default="/app/FOTS-torch/data_folder/output_eval",
+        "-o", "--output_dir", type=str, default="./data_folder/output_eval",
         help="Output directory to save predictions"
     )
     parser.add_argument(
-        "-i", "--input_dir", type=str, default="/app/FOTS-torch/data_folder/image",
+        "-i", "--input_dir", type=str, default="./data_folder/image",
+        help="Input directory having images to be predicted"
+    )
+    parser.add_argument(
+        "-g", "--input_img", type=str, default="img_513.jpg",
+        help="Input directory having images to be predicted"
+    )
+    parser.add_argument(
+        "-w", "--with_img", type=str, default="img_513.jpg",
         help="Input directory having images to be predicted"
     )
     args = parser.parse_args()
-    inference(args)
+    saved_model = inference(args)
+    polys, pred_transcripts = test_runner(saved_model,args.input_img,args.with_img,args.output_dir)
+    print("pred_transcripts",pred_transcripts)

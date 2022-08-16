@@ -4,6 +4,8 @@ labels:
    stage: prod
 include:
 - "*.py"  # A pattern for matching which files to include in the bento
+- "*.h"
+- "*.so"
 - "./components"
 - "./config"
 - "./data_folder"
@@ -11,6 +13,9 @@ include:
 - "./eval_tools"
 - "./lanms"
 - "./models/FOTS_last_checkpoint.pt"
+- "./lanms/lanms.h"
+- "./lanms/adaptor.so"
+- "./lanms/adaptor.so.dSYM"
 docker:
     distro: debian
     python_version: "3.8.12"
@@ -31,6 +36,7 @@ python:
    - lanms==1.0.2
    - Polygon3==3.0.8
    - opencv-python-headless==4.3.0.36
+   - shapely
    wheels:
      - ./local_wheels/torch-1.9.1+cu111-cp38-cp38-linux_x86_64.whl
      - ./local_wheels/torchaudio-0.9.1-cp38-cp38-manylinux1_x86_64.whl
