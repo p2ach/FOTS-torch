@@ -1,8 +1,8 @@
 {
-    "data_base_dir": "/app/FOTS-torch/data_folder/output_dir",
+    "data_base_dir": "/home/l7secu/workspace/data/fots-aihub-data-output/",
     "val_fraction": 0.05,
     "dataset_config": {
-        "batch_size": 16,
+        "batch_size": 4,
         "num_workers": 4,
         "shuffle": false
     },
@@ -15,9 +15,9 @@
     "optimizer_config": {
         "lr": 0.01
     },
-    "model_save_path": "/app/FOTS-torch/models",
-    "shared_conv_model_save_path": "/app/FOTS-torch/models/shared_conv",
-    "detector_model_save_path": "/app/FOTS-torch/models/detector",
+    "model_save_path": "/home/l7secu/workspace/project/FOTS-torch/models",
+    "shared_conv_model_save_path": "/home/l7secu/workspace/project/FOTS-torch/models/shared_conv",
+    "detector_model_save_path": "/home/l7secu/workspace/project/FOTS-torch/models/detector",
     "fots_hyperparameters": {
         "lam_theta": 20,
         "lam_reg": 1,

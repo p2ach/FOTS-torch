@@ -30,7 +30,7 @@ def minimum_bounding_rectangle(points):
     # calculate edge angles
     edges = hull_points[1:] - hull_points[:-1]
     angles = np.arctan2(edges[:, 1], edges[:, 0])
-
+    angles=0
     angles = np.abs(np.mod(angles, pi2))
     angles = np.unique(angles)
 
@@ -57,6 +57,8 @@ def minimum_bounding_rectangle(points):
     areas = (max_x - min_x) * (max_y - min_y)
     best_idx = np.argmin(areas)
 
+    best_idx= np.argmin(angles)
+
     # return the best box
     x1 = max_x[best_idx]
     x2 = min_x[best_idx]
@@ -71,6 +73,43 @@ def minimum_bounding_rectangle(points):
     rval[3] = np.dot([x1, y1], r)
 
     return rval
+
+
+def aihub_collate(batch):
+    """
+    Collate function for ICDAR dataset. It receives a batch of ground truths
+    and formats it in required format.
+    """
+    image_paths, img, boxes, transcripts, score_map, geo_map, training_mask = zip(*batch)
+    batch_size = len(score_map)
+    images, score_maps, geo_maps, training_masks = [], [], [], [] 
+
+    # convert all numpy arrays to tensors
+    for idx in range(batch_size):
+        if img[idx] is not None:
+            images.append(torch.from_numpy(img[idx]))
+            score_maps.append(torch.from_numpy(score_map[idx]))
+            geo_maps.append(torch.from_numpy(geo_map[idx]))
+            training_masks.append(torch.from_numpy(training_mask[idx]))
+
+    images = torch.stack(images, 0)
+    score_maps = torch.stack(score_maps, 0)
+    geo_maps = torch.stack(geo_maps, 0)
+    training_masks = torch.stack(training_masks, 0)
+
+    texts, bboxs, mapping = [], [], []
+    for idx, (text, bbox) in enumerate(zip(transcripts, boxes)):
+        # for txt, box in zip(text, bbox):/
+            mapping.append(idx)
+            texts.append(text)
+            bboxs.append(bbox)
+
+    # mapping = np.array(mapping)
+    # texts = np.array(texts)
+    # bboxs = np.stack(bboxs, axis=0)
+    # bboxs = np.concatenate([bboxs, np.ones((len(bboxs), 1))], axis = 1).astype(np.float32)
+
+    return image_paths, images, bboxs, training_masks, texts, score_maps, geo_maps, mapping
 
 
 def icdar_collate(batch):
@@ -97,10 +136,10 @@ def icdar_collate(batch):
 
     texts, bboxs, mapping = [], [], []
     for idx, (text, bbox) in enumerate(zip(transcripts, boxes)):
-        # for txt, box in zip(text, bbox):
+        for txt, box in zip(text, bbox):
             mapping.append(idx)
-            texts.append(text)
-            bboxs.append(bbox)
+            texts.append(txt)
+            bboxs.append(box)
 
     mapping = np.array(mapping)
     texts = np.array(texts)
@@ -265,6 +304,10 @@ def _align_vertices(bbox):
     else:
         # Find the point to the right of the lowest point.
         p_lowest_right = (p_lowest - 1) % 4
+
+        if bbox[p_lowest][0] == bbox[p_lowest_right][0]:
+            print(p_lowest)
+
         angle = np.arctan(
             -(bbox[p_lowest][1] - bbox[p_lowest_right][1]) / (bbox[p_lowest][0] - bbox[p_lowest_right][0])
         )
@@ -321,14 +364,18 @@ def generate_rbbox(image, bboxes, transcripts):
         shrink_ratio = 0.3  # from papar
         shrunk_bbox = shrink_bbox(bbox.copy(), np.array(reference_lens), shrink_ratio).astype(np.int32)[np.newaxis, :, :]
 
-        cv2.fillPoly(score_map, shrunk_bbox, 1)
-        cv2.fillPoly(bbox_mask, shrunk_bbox, bbox_idx+1)
+
 
         # if the poly is too small, then ignore it during training
         bbox_h = min(np.linalg.norm(bbox[0] - bbox[3]), np.linalg.norm(bbox[1] - bbox[2]))
         bbox_w = min(np.linalg.norm(bbox[0] - bbox[1]), np.linalg.norm(bbox[2] - bbox[3]))
-        
-        if min(bbox_h, bbox_w) < 10:
+
+        if bbox_h < 2*bbox_w:
+            cv2.fillPoly(score_map, shrunk_bbox, 1)
+            cv2.fillPoly(bbox_mask, shrunk_bbox, bbox_idx+1)
+
+
+        if min(bbox_h, bbox_w) < 10 or bbox_h > 2*bbox_w:
             cv2.fillPoly(training_mask, bbox.astype(np.int32)[np.newaxis, :, :], 0)
         # if tag:
         #     cv2.fillPoly(training_mask, poly.astype(np.int32)[np.newaxis, :, :], 0)
@@ -339,37 +386,41 @@ def generate_rbbox(image, bboxes, transcripts):
         # Now, as per the assumption, the bbox can be of any shape (quadrangle).
         # Therefore, to get the angle of rotation and pixel distances from the
         # bbox edges, fit a minimum area rectangle to bbox quadrangle.
-        try:
-            rectangle = minimum_bounding_rectangle(bbox)
-        except Exception:
-            # If could not find the min area rectangle, ignore that bbox while training
-            cv2.fillPoly(training_mask, bbox.astype(np.int32)[np.newaxis, :, :], 0)
-            continue
-        else:
-            rectangle, rotation_angle = _align_vertices(rectangle)
-            final_bboxes.append(rectangle)  # TODO: Filter very small bboxes here
+        if bbox_h < 2*bbox_w:
+            try:
+                rectangle = minimum_bounding_rectangle(bbox)
+            except Exception:
+                # If could not find the min area rectangle, ignore that bbox while training
+                cv2.fillPoly(training_mask, bbox.astype(np.int32)[np.newaxis, :, :], 0)
+                continue
+            else:
+                rectangle, rotation_angle = _align_vertices(rectangle)
+                final_bboxes.append(rectangle)  # TODO: Filter very small bboxes here
 
-        # This rectangle has 4 vertices as required. Now, we can construct
-        # the geo_map.
-        for bbox_y, bbox_x in bbox_points:
-            bbox_point = np.array([bbox_x, bbox_y], dtype=np.float32)
-            # distance from top
-            geo_map[bbox_y, bbox_x, 0] = _point_to_line_dist(rectangle[0], rectangle[1], bbox_point)
-            # distance from right
-            geo_map[bbox_y, bbox_x, 1] = _point_to_line_dist(rectangle[1], rectangle[2], bbox_point)
-            # distance from bottom
-            geo_map[bbox_y, bbox_x, 2] = _point_to_line_dist(rectangle[2], rectangle[3], bbox_point)
-            # distance from left
-            geo_map[bbox_y, bbox_x, 3] = _point_to_line_dist(rectangle[3], rectangle[0], bbox_point)
-            # bbox rotation angle
-            geo_map[bbox_y, bbox_x, 4] = rotation_angle
+            # This rectangle has 4 vertices as required. Now, we can construct
+            # the geo_map.
+            for bbox_y, bbox_x in bbox_points:
+                bbox_point = np.array([bbox_x, bbox_y], dtype=np.float32)
+                # distance from top
+                geo_map[bbox_y, bbox_x, 0] = _point_to_line_dist(rectangle[0], rectangle[1], bbox_point)
+                # distance from right
+                geo_map[bbox_y, bbox_x, 1] = _point_to_line_dist(rectangle[1], rectangle[2], bbox_point)
+                # distance from bottom
+                geo_map[bbox_y, bbox_x, 2] = _point_to_line_dist(rectangle[2], rectangle[3], bbox_point)
+                # distance from left
+                geo_map[bbox_y, bbox_x, 3] = _point_to_line_dist(rectangle[3], rectangle[0], bbox_point)
+                # bbox rotation angle
+                geo_map[bbox_y, bbox_x, 4] = rotation_angle
 
     # Size of the feature map from shared convolutions is 1/4th of
     # original image size. So all this geo_map should be of the
     # same size.
-    score_map = score_map[::4, ::4, np.newaxis].astype(np.float32)
-    geo_map = geo_map[::4, ::4].astype(np.float32)
-    training_mask = training_mask[::4, ::4, np.newaxis].astype(np.float32)
+    # score_map = score_map[::4, ::4, np.newaxis].astype(np.float32)
+    # geo_map = geo_map[::4, ::4].astype(np.float32)
+    # training_mask = training_mask[::4, ::4, np.newaxis].astype(np.float32)
+    score_map = score_map[:, :, np.newaxis].astype(np.float32)
+    geo_map = geo_map[:, :].astype(np.float32)
+    training_mask = training_mask[:, :, np.newaxis].astype(np.float32)
 
     return score_map, geo_map, training_mask, np.vstack(final_bboxes)
 

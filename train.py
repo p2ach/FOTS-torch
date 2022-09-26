@@ -14,7 +14,7 @@ from eval_tools.icdar2015 import eval as icdar_eval
 
 from trainer import Train
 from data_helpers.datasets import ICDARDataset, Synth800kPreprocessedDataset
-from data_helpers.data_utils import icdar_collate
+from data_helpers.data_utils import icdar_collate, aihub_collate
 from components.loss import FOTSLoss
 from model import FOTSModel
 from trainer import Train
@@ -51,7 +51,7 @@ def main(config, resume):
         pin_memory=True,
         **config["dataset_config"],
         worker_init_fn=seed_worker,
-        collate_fn=icdar_collate
+        collate_fn=aihub_collate
     )
 
     icdar_val_data_loader = DataLoader(
@@ -59,7 +59,7 @@ def main(config, resume):
         **config["dataset_config"],
         pin_memory=True,
         worker_init_fn=seed_worker,
-        collate_fn=icdar_collate
+        collate_fn=aihub_collate
     )
 
     # Initialize the model

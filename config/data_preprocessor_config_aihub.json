@@ -1,0 +1,24 @@
+{
+    "train_image_dir1": "finance/data/train/images/result/bank/images",
+    "train_gt_dir1": "finance/data/train/label/result/bank/annotations",
+    "train_image_dir2": "finance/data/train/images/result/insure/images",
+    "train_gt_dir2": "finance/data/train/label/result/insure/annotations",
+    "train_image_dir3": "medical/data/train/images/result/cosmetics/images",
+    "train_gt_dir3": "medical/data/train/label/result/cosmetics/annotations",
+    "train_image_dir4": "medical/data/train/images/result/medicine/images",
+    "train_gt_dir4": "medical/data/train/label/result/medicine/annotations",
+
+    "val_image_dir1": "finance/data/validation/images/result/bank/images",
+    "val_gt_dir1": "finance/data/validation/label/result/bank/annotations",
+    "val_image_dir2": "finance/data/validation/images/result/insure/images",
+    "val_gt_dir2": "finance/data/validation/label/result/insure/annotations",
+    "val_image_dir3": "medical/data/validation/images/result/cosmetics/images",
+    "val_gt_dir3": "medical/data/validation/label/result/cosmetics/annotations",
+    "val_image_dir4": "finance/data/validation/images/result/medicine/images",
+    "val_gt_dir4": "finance/data/validation/label/result/medicine/annotations",
+
+    "output_dir": "fots-aihub-data-output/",
+    "batch_size": 8,
+    "num_iterations": -1,
+    "num_workers": 4
+}

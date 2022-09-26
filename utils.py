@@ -3,7 +3,14 @@ import collections
 import torch
 
 # Characters in any transcript to be recognized
-classes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-"
+
+with open("./config/ko.txt",encoding='utf-8') as f:
+    contents = f.readlines()
+
+contents=[cnt.split('\n')[0] for cnt in contents]
+classes=''.join(contents)
+
+# classes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-"
 
 # Reference: https://github.com/meijieru/crnn.pytorch/blob/master/utils.py
 class TranscriptEncoder:

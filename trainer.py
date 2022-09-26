@@ -49,8 +49,17 @@ class Train:
         epoch_det_loss, epoch_rec_loss, total_metrics = 0, 0, np.zeros(3)
 
         for i, batch in tqdm(enumerate(self.train_iterator), total=len(self.train_iterator), position=0, leave=True):
+            if i>100:
+                print("pred_recog",pred_recog)
+                return (
+                    epoch_det_loss / len(self.train_iterator),
+                    epoch_rec_loss / len(self.train_iterator),
+                    total_metrics[0] / len(self.train_iterator),  # precision
+                    total_metrics[1] / len(self.train_iterator),  # recall
+                    total_metrics[2] / len(self.train_iterator)  # f1-score
+                )
             image_paths, images, bboxes, training_mask, transcripts, score_map, geo_map, mapping = batch
-
+            a=images.cpu().detach().numpy()[0]
             images = images.to(self.device)
             images = torch.permute(images, (0,3,1,2))
 
@@ -63,8 +72,12 @@ class Train:
             # Forward pass
             pred_score_map, pred_geo_map, pred_recog, pred_bboxes, pred_mapping, indices = self.model(images, bboxes, mapping)
 
+
+
             transcripts = transcripts[indices]
             pred_boxes = pred_bboxes[indices]
+            # print("pred_boxes",len(pred_boxes))
+            # print("bboxes",len(bboxes), bboxes)
             pred_mapping = mapping[indices]
             pred_fns = [image_paths[i] for i in pred_mapping]
 
@@ -280,11 +293,11 @@ class Train:
             #     self._save_checkpoint(f"FOTS_epoch{epoch+1}.pt", self.model)
 
             # Save checkpoint at every epoch for now
-            self._save_checkpoint(f"FOTS_last_checkpoint.pt", epoch+1)
+            # self._save_checkpoint(f"FOTS_last_checkpoint.pt", epoch+1)
 
             print(f'Epoch: {epoch+1:02} | Time: {epoch_mins}m {epoch_secs}s')
-            print(f'\tTrain Detection Loss: {train_det_loss:.4f}, Val Detection Loss: {val_det_loss:.4f}')
-            print(f'\tTrain Recognition Loss: {train_rec_loss:.4f}, Val Recognition Loss: {val_rec_loss:.4f}')
-            print(f'\tTrain Precision: {train_precision:.4f}, Val. Precision: {val_precision:.4f}')
-            print(f'\tTrain Recall: {train_recall:.4f}, Val. Recall: {val_recall:.4f}')
-            print(f'\tTrain F1: {train_f1:.4f}, Val. F1: {val_f1:.4f}\n')
+            print(f'\tTrain Detection Loss: {train_det_loss:.4f}')#, Val Detection Loss: {val_det_loss:.4f}')
+            print(f'\tTrain Recognition Loss: {train_rec_loss:.4f}')#, Val Recognition Loss: {val_rec_loss:.4f}')
+            print(f'\tTrain Precision: {train_precision:.4f}')#, Val. Precision: {val_precision:.4f}')
+            print(f'\tTrain Recall: {train_recall:.4f}')#, Val. Recall: {val_recall:.4f}')
+            print(f'\tTrain F1: {train_f1:.4f}')#, Val. F1: {val_f1:.4f}\n')
